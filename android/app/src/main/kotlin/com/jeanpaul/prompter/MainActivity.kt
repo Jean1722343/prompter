@@ -30,6 +30,7 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "show" -> {
+                        OverlayService.script = call.argument<String>("script")
                         val intent = Intent(this, OverlayService::class.java)
                             .setAction(OverlayService.ACTION_SHOW)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

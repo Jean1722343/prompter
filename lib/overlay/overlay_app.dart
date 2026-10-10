@@ -81,7 +81,7 @@ class _OverlayPanelState extends State<OverlayPanel> {
   }
 
   Future<void> _load() async {
-    final script = await Storage.overlayScript();
+    final script = await OverlayWindow.script() ?? await Storage.overlayScript();
     final settings = await Storage.overlaySettings();
     final geo = await OverlayWindow.geometry();
     if (!mounted) return;

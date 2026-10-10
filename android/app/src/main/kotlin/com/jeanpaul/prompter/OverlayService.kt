@@ -53,6 +53,10 @@ class OverlayService : Service() {
         @Volatile
         var isRunning = false
             private set
+
+        /** Guion (JSON) que debe mostrar la ventana; lo deja la app al abrirla. */
+        @Volatile
+        var script: String? = null
     }
 
     private lateinit var windowManager: WindowManager
@@ -239,6 +243,7 @@ class OverlayService : Service() {
                 result.success(geometry())
             }
             "geometry" -> result.success(geometry())
+            "script" -> result.success(script)
             "openApp" -> {
                 packageManager.getLaunchIntentForPackage(packageName)?.let {
                     it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)

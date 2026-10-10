@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -23,7 +24,9 @@ class OverlayBridge {
 
   static Future<void> show(Script script) async {
     await Storage.setOverlayScript(script);
-    await _channel.invokeMethod('show');
+    // También va por el canal nativo: así la ventana lo tiene al instante,
+    // sin depender de que el otro motor lea el disco a tiempo.
+    await _channel.invokeMethod('show', {'script': jsonEncode(script.toJson())});
   }
 
   static Future<void> close() => _channel.invokeMethod('close');
@@ -65,6 +68,13 @@ class OverlayWindow {
   static Future<OverlayGeometry?> geometry() async {
     final map = await _channel.invokeMapMethod<String, double>('geometry');
     return map == null ? null : OverlayGeometry.fromMap(map);
+  }
+
+  /// Guion que dejó la app al abrir la ventana, o null.
+  static Future<Script?> script() async {
+    final raw = await _channel.invokeMethod<String>('script');
+    if (raw == null) return null;
+    return Script.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
   static Future<void> openApp() => _channel.invokeMethod('openApp');
