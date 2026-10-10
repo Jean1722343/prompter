@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Tres líneas de guion; la primera, la línea de lectura. -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M37,40h34a3.5,3.5 0,0 1,0 7h-34a3.5,3.5 0,0 1,0 -7z" />
+    <path android:fillColor="#B3FFFFFF" android:pathData="M37,51h28a3.5,3.5 0,0 1,0 7h-28a3.5,3.5 0,0 1,0 -7z" />
+    <path android:fillColor="#73FFFFFF" android:pathData="M37,62h20a3.5,3.5 0,0 1,0 7h-20a3.5,3.5 0,0 1,0 -7z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M28,39.5l5,4 -5,4z" />
+</vector>
