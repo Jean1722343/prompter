@@ -14,17 +14,27 @@ import '../widgets/glass.dart';
 import '../widgets/pinch_detector.dart';
 import '../widgets/prompter_view.dart';
 
+/// Modo oscuro de la ventana flotante (vive en su propio isolate).
+final _overlayDark = ValueNotifier<bool>(false);
+
 /// App que vive dentro de la ventana flotante (otro motor de Flutter).
 class OverlayApp extends StatelessWidget {
   const OverlayApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      color: Colors.transparent,
-      theme: buildTheme().copyWith(scaffoldBackgroundColor: Colors.transparent),
-      home: const Material(type: MaterialType.transparency, child: OverlayPanel()),
+    return ValueListenableBuilder(
+      valueListenable: _overlayDark,
+      builder: (context, dark, _) {
+        AppColors.dark = dark;
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          color: Colors.transparent,
+          themeAnimationDuration: Duration.zero,
+          theme: buildTheme().copyWith(scaffoldBackgroundColor: Colors.transparent),
+          home: const Material(type: MaterialType.transparency, child: OverlayPanel()),
+        );
+      },
     );
   }
 }
@@ -38,7 +48,7 @@ class OverlayPanel extends StatefulWidget {
   State<OverlayPanel> createState() => _OverlayPanelState();
 }
 
-class _OverlayPanelState extends State<OverlayPanel> {
+class _OverlayPanelState extends State<OverlayPanel> with WidgetsBindingObserver {
   static const _bubbleSize = 60.0;
   static const _minSize = Size(260, 170);
   static const _radius = 28.0;
@@ -65,15 +75,31 @@ class _OverlayPanelState extends State<OverlayPanel> {
   // Para no confundir "arrastrar la burbuja" con "tocarla".
   Offset? _bubbleDownOffset;
 
+  Appearance _appearance = Appearance.system;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     OverlayWindow.setReloadHandler(_load);
     _load();
   }
 
   @override
+  void didChangePlatformBrightness() {
+    if (_appearance == Appearance.system) _applyAppearance();
+  }
+
+  void _applyAppearance() {
+    final dark = _appearance.resolve(WidgetsBinding.instance.platformDispatcher.platformBrightness);
+    AppColors.dark = dark;
+    _overlayDark.value = dark;
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _saveDebounce?.cancel();
     _toastTimer?.cancel();
     _controller.dispose();
@@ -84,7 +110,9 @@ class _OverlayPanelState extends State<OverlayPanel> {
     final script = await OverlayWindow.script() ?? await Storage.overlayScript();
     final settings = await Storage.overlaySettings();
     final geo = await OverlayWindow.geometry();
+    _appearance = await OverlayWindow.appearance() ?? await Storage.appearance();
     if (!mounted) return;
+    _applyAppearance();
     setState(() {
       _script = script;
       _settings = settings;
@@ -201,10 +229,10 @@ class _OverlayPanelState extends State<OverlayPanel> {
                 radius: _radius,
                 blurBackground: false,
                 shadow: false,
-                tint: Colors.white,
-                tintOpacity: o * 0.6,
+                tint: AppColors.dark ? Colors.black : Colors.white,
+                tintOpacity: o * (AppColors.dark ? 0.7 : 0.6),
                 // Con opacidad 0 queda solo el borde de cristal.
-                strength: 0.12 + 0.88 * o,
+                strength: 0.03 + 0.97 * o,
                 child: ClipPath(
                   clipper: ShapeBorderClipper(shape: shape),
                   child: Column(
@@ -233,10 +261,16 @@ class _OverlayPanelState extends State<OverlayPanel> {
                   _requestResize(_gestureStart);
                 },
                 onPanEnd: (_) => _persistSize(),
-                child: const SizedBox(
+                child: SizedBox(
                   width: 40,
                   height: 40,
-                  child: CustomPaint(painter: _ResizeCornerPainter(radius: _radius)),
+                  child: CustomPaint(
+                    painter: _ResizeCornerPainter(
+                      radius: _radius,
+                      color: AppColors.label.withValues(alpha: 0.3),
+                      halo: _halo != null,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -264,7 +298,8 @@ class _OverlayPanelState extends State<OverlayPanel> {
                       width: 22,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: AppColors.label.withValues(alpha: 0.25),
+                        boxShadow: _halo == null ? null : [BoxShadow(color: _haloColor, blurRadius: 6)],
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -274,7 +309,7 @@ class _OverlayPanelState extends State<OverlayPanel> {
                         _script?.displayTitle ?? 'Prompter',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppText.headline.copyWith(fontSize: 13.5),
+                        style: AppText.headline.copyWith(fontSize: 13.5, shadows: _halo),
                       ),
                     ),
                   ],
@@ -286,40 +321,49 @@ class _OverlayPanelState extends State<OverlayPanel> {
             icon: CupertinoIcons.drop_fill,
             active: _panel == _Panel.opacity,
             label: 'Opacidad',
+            halo: _halo,
             onTap: () => _togglePanel(_Panel.opacity),
           ),
           _MiniButton(
             icon: CupertinoIcons.textformat_size,
             active: _panel == _Panel.settings,
             label: 'Letra y más',
+            halo: _halo,
             onTap: () => _togglePanel(_Panel.settings),
           ),
-          _MiniButton(icon: CupertinoIcons.minus, label: 'Minimizar', onTap: _minimize),
-          _MiniButton(icon: CupertinoIcons.xmark, label: 'Cerrar', onTap: OverlayWindow.close),
+          _MiniButton(icon: CupertinoIcons.minus, label: 'Minimizar', halo: _halo, onTap: _minimize),
+          _MiniButton(icon: CupertinoIcons.xmark, label: 'Cerrar', halo: _halo, onTap: OverlayWindow.close),
           const SizedBox(width: 6),
         ],
       ),
     );
   }
 
-  /// Barras de controles: siempre blancas y legibles, aunque el resto de la
-  /// ventana sea transparente.
+  /// Barras de arriba y de controles. También siguen la opacidad, para que
+  /// con la ventana transparente no quede un marco opaco alrededor.
   Widget _chrome({required bool top, required Widget child}) {
+    final o = _settings.opacity;
+    final line = BorderSide(color: AppColors.separator.withValues(alpha: AppColors.separator.a * o), width: 0.5);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.97),
-        border: Border(
-          top: top ? BorderSide.none : const BorderSide(color: AppColors.separator, width: 0.5),
-          bottom: top ? const BorderSide(color: AppColors.separator, width: 0.5) : BorderSide.none,
-        ),
+        color: AppColors.glass.withValues(alpha: 0.02 + 0.94 * o),
+        border: Border(top: top ? BorderSide.none : line, bottom: top ? line : BorderSide.none),
       ),
       child: child,
     );
   }
 
-  /// Con fondo casi transparente la letra pasa a blanco con sombra para
-  /// leerse sobre la imagen de la cámara.
-  bool get _darkText => _settings.opacity >= 0.45;
+  /// Con la ventana casi transparente, iconos y textos llevan un halo que
+  /// contrasta con cualquier imagen de la cámara.
+  List<Shadow>? get _halo => _settings.opacity < 0.6
+      ? [Shadow(color: _haloColor, blurRadius: 4), Shadow(color: _haloColor, blurRadius: 10)]
+      : null;
+
+  Color get _haloColor => AppColors.dark ? const Color(0xD9000000) : const Color(0xF2FFFFFF);
+
+  /// Letra del guion: en modo claro pasa de negra a blanca cuando el fondo
+  /// es casi transparente; en modo oscuro siempre es blanca.
+  bool get _darkText => !AppColors.dark && _settings.opacity >= 0.45;
 
   Widget _buildBody() {
     return Stack(
@@ -398,8 +442,8 @@ class _OverlayPanelState extends State<OverlayPanel> {
     key: key,
     radius: 20,
     blurBackground: false,
-    tint: Colors.white,
-    tintOpacity: 0.85,
+    tint: AppColors.glass,
+    tintOpacity: AppColors.dark ? 0.92 : 0.85,
     padding: const EdgeInsets.fromLTRB(14, 4, 10, 4),
     child: child,
   );
@@ -507,6 +551,7 @@ class _OverlayPanelState extends State<OverlayPanel> {
               _MiniButton(
                 icon: CupertinoIcons.minus_circle,
                 label: 'Más lento',
+                halo: _halo,
                 size: 40,
                 onTap: () => _changeSpeed(-0.5),
               ),
@@ -520,17 +565,25 @@ class _OverlayPanelState extends State<OverlayPanel> {
                       color: AppColors.label,
                       fontWeight: FontWeight.w700,
                       fontFeatures: const [FontFeature.tabularFigures()],
+                      shadows: _halo,
                     ),
                   ),
                 ),
               _MiniButton(
                 icon: CupertinoIcons.plus_circle,
                 label: 'Más rápido',
+                halo: _halo,
                 size: 40,
                 onTap: () => _changeSpeed(0.5),
               ),
               const Spacer(),
-              _MiniButton(icon: CupertinoIcons.backward_fill, label: 'Retroceder', size: 40, onTap: () => c.nudge(-3)),
+              _MiniButton(
+                icon: CupertinoIcons.backward_fill,
+                label: 'Retroceder',
+                halo: _halo,
+                size: 40,
+                onTap: () => c.nudge(-3),
+              ),
               const SizedBox(width: 4),
               Pressable(
                 onTap: c.atEnd ? () => c.play() : c.toggle,
@@ -546,7 +599,13 @@ class _OverlayPanelState extends State<OverlayPanel> {
                 ),
               ),
               const SizedBox(width: 4),
-              _MiniButton(icon: CupertinoIcons.forward_fill, label: 'Adelantar', size: 40, onTap: () => c.nudge(3)),
+              _MiniButton(
+                icon: CupertinoIcons.forward_fill,
+                label: 'Adelantar',
+                halo: _halo,
+                size: 40,
+                onTap: () => c.nudge(3),
+              ),
               const Spacer(),
             ],
           ),
@@ -578,6 +637,7 @@ class _MiniButton extends StatelessWidget {
     required this.label,
     this.active = false,
     this.size = 34,
+    this.halo,
   });
 
   final IconData icon;
@@ -585,6 +645,7 @@ class _MiniButton extends StatelessWidget {
   final String label;
   final bool active;
   final double size;
+  final List<Shadow>? halo;
 
   @override
   Widget build(BuildContext context) {
@@ -604,7 +665,7 @@ class _MiniButton extends StatelessWidget {
               shape: BoxShape.circle,
               color: active ? AppColors.accent.withValues(alpha: 0.14) : Colors.transparent,
             ),
-            child: Icon(icon, size: size * 0.5, color: active ? AppColors.accent : AppColors.label),
+            child: Icon(icon, size: size * 0.5, color: active ? AppColors.accent : AppColors.label, shadows: halo),
           ),
         ),
       ),
@@ -615,9 +676,11 @@ class _MiniButton extends StatelessWidget {
 /// Arco en la esquina inferior derecha, siguiendo la curva de la ventana
 /// (como el asa de redimensionar de iPadOS).
 class _ResizeCornerPainter extends CustomPainter {
-  const _ResizeCornerPainter({required this.radius});
+  const _ResizeCornerPainter({required this.radius, required this.color, required this.halo});
 
   final double radius;
+  final Color color;
+  final bool halo;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -625,14 +688,18 @@ class _ResizeCornerPainter extends CustomPainter {
     final r = radius - inset;
     final corner = Offset(size.width - inset, size.height - inset);
     final rect = Rect.fromCircle(center: corner - Offset(r, r), radius: r);
-    final paint = Paint()
+    Paint stroke(Color c, double w) => Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
+      ..strokeWidth = w
       ..strokeCap = StrokeCap.round
-      ..color = Colors.black.withValues(alpha: 0.3);
-    canvas.drawArc(rect, 0.12, math.pi / 2 - 0.24, false, paint);
+      ..color = c;
+    if (halo) {
+      final glow = color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+      canvas.drawArc(rect, 0.12, math.pi / 2 - 0.24, false, stroke(glow.withValues(alpha: 0.5), 7));
+    }
+    canvas.drawArc(rect, 0.12, math.pi / 2 - 0.24, false, stroke(color, 4));
   }
 
   @override
-  bool shouldRepaint(_ResizeCornerPainter old) => old.radius != radius;
+  bool shouldRepaint(_ResizeCornerPainter old) => old.radius != radius || old.color != color || old.halo != halo;
 }

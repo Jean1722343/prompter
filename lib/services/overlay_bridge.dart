@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/storage.dart';
 import '../models/script.dart';
+import '../theme.dart';
 
 /// Lado de la app: abrir/cerrar la ventana flotante y gestionar el permiso.
 class OverlayBridge {
@@ -22,11 +23,11 @@ class OverlayBridge {
 
   static Future<bool> isActive() async => isSupported && (await _channel.invokeMethod<bool>('isActive') ?? false);
 
-  static Future<void> show(Script script) async {
+  static Future<void> show(Script script, {Appearance appearance = Appearance.system}) async {
     await Storage.setOverlayScript(script);
     // También va por el canal nativo: así la ventana lo tiene al instante,
     // sin depender de que el otro motor lea el disco a tiempo.
-    await _channel.invokeMethod('show', {'script': jsonEncode(script.toJson())});
+    await _channel.invokeMethod('show', {'script': jsonEncode(script.toJson()), 'appearance': appearance.name});
   }
 
   static Future<void> close() => _channel.invokeMethod('close');
@@ -75,6 +76,12 @@ class OverlayWindow {
     final raw = await _channel.invokeMethod<String>('script');
     if (raw == null) return null;
     return Script.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  }
+
+  /// Apariencia (claro/oscuro/automático) que tenía la app al abrir la ventana.
+  static Future<Appearance?> appearance() async {
+    final name = await _channel.invokeMethod<String>('appearance');
+    return name == null ? null : Appearance.parse(name);
   }
 
   static Future<void> openApp() => _channel.invokeMethod('openApp');

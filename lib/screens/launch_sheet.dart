@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app.dart';
 import '../models/script.dart';
 import '../services/overlay_bridge.dart';
 import '../theme.dart';
@@ -68,7 +69,7 @@ class _LaunchSheetState extends State<_LaunchSheet> with WidgetsBindingObserver 
   }
 
   Future<void> _startFloating() async {
-    await OverlayBridge.show(widget.script);
+    await OverlayBridge.show(widget.script, appearance: AppearanceScope.of(context).appearance);
     if (!mounted) return;
     Navigator.of(context).pop();
     if (_autoCamera && await OverlayBridge.openCamera()) return;
@@ -125,9 +126,9 @@ class _LaunchSheetState extends State<_LaunchSheet> with WidgetsBindingObserver 
               padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
               child: Row(
                 children: [
-                  const Icon(CupertinoIcons.videocam_fill, color: AppColors.secondaryLabel, size: 22),
+                  Icon(CupertinoIcons.videocam_fill, color: AppColors.secondaryLabel, size: 22),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -265,7 +266,7 @@ class _PermissionDialog extends StatelessWidget {
         children: [
           const AccentOrb(size: 64, child: Icon(CupertinoIcons.layers_alt_fill, color: Colors.white, size: 30)),
           const SizedBox(height: 18),
-          const Text('Un permiso y listo', style: AppText.title, textAlign: TextAlign.center),
+          Text('Un permiso y listo', style: AppText.title, textAlign: TextAlign.center),
           const SizedBox(height: 10),
           Text(
             'Para mostrar el guion encima de la cámara, Android necesita que actives '

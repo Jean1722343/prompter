@@ -53,7 +53,9 @@ class Glass extends StatelessWidget {
         ? const CircleBorder()
         : RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(radius));
     final s = strength.clamp(0.0, 1.5);
-    Color white(double v) => Colors.white.withValues(alpha: (v * s).clamp(0.0, 1.0));
+    // De día, blanco esmerilado; de noche, grafito translúcido.
+    final base = AppColors.glass;
+    Color white(double v) => base.withValues(alpha: (v * s * (AppColors.dark ? 0.85 : 1)).clamp(0.0, 1.0));
 
     Widget body = DecoratedBox(
       decoration: ShapeDecoration(
@@ -96,7 +98,7 @@ class Glass extends StatelessWidget {
               shape: shape,
               shadows: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.07 * shadowAlpha),
+                  color: Colors.black.withValues(alpha: (AppColors.dark ? 0.35 : 0.07) * shadowAlpha),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
@@ -118,7 +120,8 @@ class _RimPainter extends CustomPainter {
   final ShapeBorder shape;
   final double strength;
 
-  Color _w(double v) => Colors.white.withValues(alpha: (v * strength).clamp(0.0, 1.0));
+  // El brillo del borde es más tenue de noche para no deslumbrar.
+  Color _w(double v) => Colors.white.withValues(alpha: (v * strength * (AppColors.dark ? 0.32 : 1)).clamp(0.0, 1.0));
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -130,7 +133,9 @@ class _RimPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.6
-        ..color = Colors.black.withValues(alpha: (0.07 * strength).clamp(0.0, 1.0)),
+        ..color = (AppColors.dark ? Colors.white : Colors.black).withValues(
+          alpha: ((AppColors.dark ? 0.06 : 0.07) * strength).clamp(0.0, 1.0),
+        ),
     );
 
     // Borde especular: brilla arriba a la izquierda y abajo a la derecha.
@@ -463,12 +468,19 @@ class _OrbsPainter extends CustomPainter {
   final Animation<double> t;
   final double intensity;
 
-  static const _orbs = [
-    (color: AppColors.blue, x: 0.10, y: 0.04, r: 0.80, phase: 0.0, a: 0.26),
-    (color: AppColors.cyan, x: 0.98, y: 0.30, r: 0.60, phase: 0.33, a: 0.22),
-    (color: AppColors.purple, x: 0.02, y: 0.66, r: 0.70, phase: 0.66, a: 0.16),
-    (color: AppColors.pink, x: 0.90, y: 0.94, r: 0.62, phase: 0.5, a: 0.12),
-  ];
+  static List<({Color color, double x, double y, double r, double phase, double a})> get _orbs => AppColors.dark
+      ? [
+          (color: AppColors.blue, x: 0.10, y: 0.04, r: 0.80, phase: 0.0, a: 0.42),
+          (color: AppColors.cyan, x: 0.98, y: 0.30, r: 0.60, phase: 0.33, a: 0.20),
+          (color: AppColors.indigo, x: 0.02, y: 0.66, r: 0.72, phase: 0.66, a: 0.36),
+          (color: AppColors.purple, x: 0.90, y: 0.94, r: 0.62, phase: 0.5, a: 0.26),
+        ]
+      : [
+          (color: AppColors.blue, x: 0.10, y: 0.04, r: 0.80, phase: 0.0, a: 0.26),
+          (color: AppColors.cyan, x: 0.98, y: 0.30, r: 0.60, phase: 0.33, a: 0.22),
+          (color: AppColors.purple, x: 0.02, y: 0.66, r: 0.70, phase: 0.66, a: 0.16),
+          (color: AppColors.pink, x: 0.90, y: 0.94, r: 0.62, phase: 0.5, a: 0.12),
+        ];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -502,15 +514,15 @@ Future<T?> showGlassSheet<T>(BuildContext context, {required WidgetBuilder build
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     elevation: 0,
-    barrierColor: Colors.black.withValues(alpha: 0.2),
+    barrierColor: Colors.black.withValues(alpha: AppColors.dark ? 0.5 : 0.2),
     builder: (context) => Padding(
       padding: EdgeInsets.fromLTRB(8, 0, 8, 8 + MediaQuery.paddingOf(context).bottom),
       child: BackdropGroup(
         child: Glass(
           radius: 38,
           blur: 40,
-          tint: Colors.white,
-          tintOpacity: 0.45,
+          tint: AppColors.glass,
+          tintOpacity: AppColors.dark ? 0.6 : 0.45,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -519,7 +531,7 @@ Future<T?> showGlassSheet<T>(BuildContext context, {required WidgetBuilder build
                 width: 38,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.16),
+                  color: AppColors.label.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -538,7 +550,7 @@ Future<T?> showGlassDialog<T>(BuildContext context, {required WidgetBuilder buil
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Cerrar',
-    barrierColor: Colors.black.withValues(alpha: 0.22),
+    barrierColor: Colors.black.withValues(alpha: AppColors.dark ? 0.5 : 0.22),
     transitionDuration: const Duration(milliseconds: 320),
     pageBuilder: (context, _, _) => Center(
       child: Padding(
@@ -546,7 +558,7 @@ Future<T?> showGlassDialog<T>(BuildContext context, {required WidgetBuilder buil
         child: Material(
           type: MaterialType.transparency,
           child: BackdropGroup(
-            child: Glass(radius: 34, blur: 40, tint: Colors.white, tintOpacity: 0.5, child: builder(context)),
+            child: Glass(radius: 34, blur: 40, tint: AppColors.glass, tintOpacity: AppColors.dark ? 0.65 : 0.5, child: builder(context)),
           ),
         ),
       ),

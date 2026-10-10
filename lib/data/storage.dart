@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/prompter_settings.dart';
 import '../models/script.dart';
+import '../theme.dart';
 
 /// Acceso a disco compartido entre la app y la ventana flotante.
 ///
@@ -19,6 +20,11 @@ class Storage {
   static const _overlayScriptKey = 'overlay_script';
   static const _readerSettingsKey = 'settings_reader';
   static const _overlaySettingsKey = 'settings_overlay';
+  static const _appearanceKey = 'appearance';
+
+  static Future<Appearance> appearance() async => Appearance.parse(await _prefs.getString(_appearanceKey));
+
+  static Future<void> saveAppearance(Appearance a) => _prefs.setString(_appearanceKey, a.name);
 
   static Future<List<Script>> loadScripts() async {
     final raw = await _prefs.getString(_scriptsKey);
@@ -44,7 +50,9 @@ class Storage {
     return Script.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
-  static Future<PrompterSettings> readerSettings() => _settings(_readerSettingsKey, PrompterSettings.reader);
+  /// Si nunca se ha tocado, el lector sigue el modo claro/oscuro de la app.
+  static Future<PrompterSettings> readerSettings() =>
+      _settings(_readerSettingsKey, PrompterSettings.reader.copyWith(dark: AppColors.dark));
 
   static Future<PrompterSettings> overlaySettings() => _settings(_overlaySettingsKey, PrompterSettings.overlay);
 

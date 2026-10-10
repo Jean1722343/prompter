@@ -49,7 +49,9 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    // Guarda lo pendiente si la pantalla se cierra sin pasar por "atrás"
+    // (por ejemplo, al cambiar de modo claro/oscuro).
+    _save();
     _title.dispose();
     _content.dispose();
     _contentFocus.dispose();
@@ -219,7 +221,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(CupertinoIcons.text_alignleft, size: 15, color: AppColors.secondaryLabel),
+                          Icon(CupertinoIcons.text_alignleft, size: 15, color: AppColors.secondaryLabel),
                           const SizedBox(width: 6),
                           Text(pluralWords(words), style: AppText.footnote.copyWith(color: AppColors.label)),
                           Container(
@@ -228,7 +230,7 @@ class _EditorScreenState extends State<EditorScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 12),
                             color: AppColors.separator,
                           ),
-                          const Icon(CupertinoIcons.timer, size: 15, color: AppColors.secondaryLabel),
+                          Icon(CupertinoIcons.timer, size: 15, color: AppColors.secondaryLabel),
                           const SizedBox(width: 6),
                           Text(
                             '≈ ${formatDuration(duration)} de lectura',

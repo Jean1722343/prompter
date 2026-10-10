@@ -17,11 +17,12 @@ Escribe tu guion, ábrelo en una ventana de cristal encima de tu cámara y léel
 ---
 
 <p align="center">
-  <img src="docs/screenshots/inicio.png" width="19%" alt="Lista de guiones" />
-  <img src="docs/screenshots/editor.png" width="19%" alt="Editor de guiones" />
-  <img src="docs/screenshots/modos.png" width="19%" alt="Elegir modo de lectura" />
-  <img src="docs/screenshots/flotante.png" width="19%" alt="Ventana flotante sobre la cámara" />
-  <img src="docs/screenshots/lector.png" width="19%" alt="Lector a pantalla completa" />
+  <img src="docs/screenshots/inicio.png" width="16%" alt="Lista de guiones" />
+  <img src="docs/screenshots/oscuro.png" width="16%" alt="Lista de guiones en modo oscuro" />
+  <img src="docs/screenshots/editor.png" width="16%" alt="Editor de guiones" />
+  <img src="docs/screenshots/modos.png" width="16%" alt="Elegir modo de lectura" />
+  <img src="docs/screenshots/flotante.png" width="16%" alt="Ventana flotante sobre la cámara" />
+  <img src="docs/screenshots/lector.png" width="16%" alt="Lector a pantalla completa" />
 </p>
 
 ## ¿Por qué Prompter?
@@ -40,7 +41,7 @@ Grabar un vídeo hablando a cámara es fácil… hasta que se te olvida qué iba
 - Una **ventana de cristal** que se queda encima de cualquier app.
 - **Muévela** arrastrando la barra superior.
 - **Cambia su tamaño con los dedos**: pellizca para agrandarla o achicarla (separa los dedos en horizontal para hacerla más ancha y en vertical para hacerla más alta) o arrastra la esquina inferior derecha.
-- **Opacidad a tu gusto** con el botón de la gota, de sólida a totalmente transparente. El texto pasa solo de negro a blanco con sombra para que siempre se lea sobre la imagen de la cámara.
+- **Opacidad a tu gusto** con el botón de la gota, de sólida a totalmente transparente. Afecta a toda la ventana, barras y bordes incluidos, así que al 0 % solo quedan el texto y los controles. Iconos y textos llevan un halo y la letra cambia de color sola para que siempre se lean sobre la imagen de la cámara.
 - **Controles siempre a mano**, sin entrar en ajustes:
   - ▶️ / ⏸ reproducir y pausar
   - ⏪ ⏩ retroceder y adelantar
@@ -62,6 +63,8 @@ Grabar un vídeo hablando a cámara es fácil… hasta que se te olvida qué iba
 - Toca el texto para pausar; arrástralo para moverte a mano.
 
 ## Diseño
+
+**Modo claro y modo oscuro**, como en el iPhone: elige *Automático* (sigue al sistema), *Claro* u *Oscuro* con el botón junto a "REC". La ventana flotante usa el mismo modo.
 
 Interfaz inspirada en iOS y su estilo **Liquid Glass**: fondo claro con manchas de color suaves, paneles de cristal esmerilado con desenfoque, borde especular y sombras ligeras, esquinas *squircle*, botones que rebotan al pulsar, vibración sutil, iconos Cupertino, el azul de sistema de Apple (`#007AFF`) y tipografía [Inter](https://rsms.me/inter/), la más cercana a SF Pro con licencia libre.
 

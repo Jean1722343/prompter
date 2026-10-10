@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       children: [
                         const _Brand(),
                         const SizedBox(height: 30),
-                        const Text('Guiones', style: AppText.largeTitle),
+                        Text('Guiones', style: AppText.largeTitle),
                         const SizedBox(height: 6),
                         Text(
                           all.isEmpty
@@ -281,7 +281,7 @@ class _CompactHeader extends StatelessWidget {
       strength: 0.6,
       child: Padding(
         padding: EdgeInsets.only(top: topInset),
-        child: const SizedBox(
+        child: SizedBox(
           height: 48,
           child: Center(child: Text('Guiones', style: AppText.headline)),
         ),
@@ -309,7 +309,18 @@ class _Brand extends StatelessWidget {
         const SizedBox(width: 10),
         Text('Prompter', style: AppText.headline.copyWith(fontSize: 18, fontWeight: FontWeight.w700)),
         const Spacer(),
-        const Glass(
+        GlassIconButton(
+          icon: switch (AppearanceScope.of(context).appearance) {
+            Appearance.system => CupertinoIcons.circle_lefthalf_fill,
+            Appearance.light => CupertinoIcons.sun_max_fill,
+            Appearance.dark => CupertinoIcons.moon_fill,
+          },
+          size: 36,
+          semanticLabel: 'Apariencia',
+          onTap: () => _showAppearanceSheet(context),
+        ),
+        const SizedBox(width: 8),
+        Glass(
           radius: 16,
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Row(
@@ -327,6 +338,41 @@ class _Brand extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Hoja para elegir modo claro, oscuro o automático.
+void _showAppearanceSheet(BuildContext context) {
+  final scope = AppearanceScope.of(context);
+  showGlassSheet<void>(
+    context,
+    builder: (sheet) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Text('Apariencia', textAlign: TextAlign.center, style: AppText.title),
+          ),
+          for (final a in Appearance.values)
+            _ActionRow(
+              icon: switch (a) {
+                Appearance.system => CupertinoIcons.circle_lefthalf_fill,
+                Appearance.light => CupertinoIcons.sun_max_fill,
+                Appearance.dark => CupertinoIcons.moon_fill,
+              },
+              label: a == Appearance.system ? 'Automático (como el sistema)' : a.label,
+              selected: a == scope.appearance,
+              onTap: () {
+                Navigator.pop(sheet);
+                scope.onChanged(a);
+              },
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Punto rojo que late, como el de una cámara grabando.
@@ -483,7 +529,7 @@ class _SearchField extends StatelessWidget {
         textAlignVertical: TextAlignVertical.center,
         style: AppText.headline.copyWith(fontWeight: FontWeight.w400, fontSize: 16),
         decoration: InputDecoration(
-          prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.secondaryLabel, size: 20),
+          prefixIcon: Icon(CupertinoIcons.search, color: AppColors.secondaryLabel, size: 20),
           hintText: 'Buscar',
           contentPadding: EdgeInsets.zero,
           suffixIcon: ValueListenableBuilder(
@@ -495,7 +541,7 @@ class _SearchField extends StatelessWidget {
                       controller.clear();
                       onChanged('');
                     },
-                    child: const Icon(CupertinoIcons.xmark_circle_fill, size: 18, color: AppColors.tertiaryLabel),
+                    child: Icon(CupertinoIcons.xmark_circle_fill, size: 18, color: AppColors.tertiaryLabel),
                   ),
           ),
         ),
@@ -520,7 +566,7 @@ class _ActiveOverlayBanner extends StatelessWidget {
         children: [
           const RecDot(size: 9),
           const SizedBox(width: 12),
-          const Expanded(child: Text('Teleprompter flotante activo', style: AppText.headline)),
+          Expanded(child: Text('Teleprompter flotante activo', style: AppText.headline)),
           GlassPill(label: 'Cerrar', height: 38, fontSize: 14, onTap: onClose),
         ],
       ),
@@ -529,12 +575,19 @@ class _ActiveOverlayBanner extends StatelessWidget {
 }
 
 class _ActionRow extends StatelessWidget {
-  const _ActionRow({required this.icon, required this.label, required this.onTap, this.destructive = false});
+  const _ActionRow({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+    this.selected = false,
+  });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool destructive;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -554,7 +607,8 @@ class _ActionRow extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 21),
               const SizedBox(width: 14),
-              Text(label, style: AppText.headline.copyWith(color: color)),
+              Expanded(child: Text(label, style: AppText.headline.copyWith(color: color))),
+              if (selected) Icon(CupertinoIcons.checkmark_alt, color: AppColors.accent, size: 22),
             ],
           ),
         ),
@@ -602,14 +656,14 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Glass(
+          Glass(
             radius: 34,
             width: 104,
             height: 104,
             child: Icon(CupertinoIcons.doc_text, size: 46, color: AppColors.accent),
           ),
           const SizedBox(height: 26),
-          const Text('Tu primer guion te espera', style: AppText.title, textAlign: TextAlign.center),
+          Text('Tu primer guion te espera', style: AppText.title, textAlign: TextAlign.center),
           const SizedBox(height: 8),
           Text(
             'Ponle un título, escribe o pega el texto y léelo flotando sobre tu cámara.',

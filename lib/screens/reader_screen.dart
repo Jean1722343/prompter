@@ -85,7 +85,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         fontSize: _settings.fontSize,
                         speed: _settings.speed,
                         mirror: _settings.mirror,
-                        textColor: dark ? Colors.white : AppColors.label,
+                        textColor: dark ? Colors.white : Colors.black,
                         guidePosition: 0.3,
                         horizontalPadding: 32,
                         userScroll: !_pinching,
@@ -163,7 +163,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       value: _controller.progress,
                       minHeight: 3,
                       backgroundColor: Colors.transparent,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+                      valueColor: AlwaysStoppedAnimation(AppColors.accent),
                     ),
                   ),
                 ),
@@ -219,7 +219,7 @@ class _Controls extends StatelessWidget {
     return Glass(
       radius: 36,
       blur: 34,
-      tint: Colors.white,
+      tint: AppColors.glass,
       tintOpacity: 0.3,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
       child: Column(
@@ -285,7 +285,7 @@ class _Controls extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Text('Toca el texto para pausar · Pellizca para cambiar la letra', style: AppText.caption),
+          Text('Toca el texto para pausar · Pellizca para cambiar la letra', style: AppText.caption),
         ],
       ),
     );
